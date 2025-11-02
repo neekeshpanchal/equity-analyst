@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Backtest Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <h1>📊 Backtest & Predictive Modeling Dashboard</h1>
+
+    <!-- Backtest Form -->
+    <form id="backtestForm" method="POST">
+        <input type="text" name="ticker" placeholder="Enter ticker (e.g. AAPL)" required>
+        
+        <select name="table" required>
+            <option value="" disabled selected>Select a table</option>
+            {% for t in tables %}
+                <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="date" name="start" required>
+        <input type="date" name="end" required>
+        <input type="text" name="model" placeholder="Model Name (e.g. LSTM)" required>
+        <button type="submit">Run Backtest</button>
+    </form>
+
+    <!-- Result Metrics -->
+    {% if result %}
+        <div class="result-metrics">
+            {% if result.error %}
+                <p style="color: red;">Error: {{ result.error }}</p>
+            {% else %}
+                <p><strong>Total Return %:</strong> {{ result.total_return_pct }}</p>
+                <p><strong>Volatility %:</strong> {{ result.volatility_pct }}</p>
+                <p><strong>Sharpe Ratio:</strong> {{ result.sharpe_ratio }}</p>
+                <p><strong>Max Drawdown %:</strong> {{ result.max_drawdown_pct }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- Chart -->
+    <div class="chart-container">
+        <canvas id="backtestChart"></canvas>
+    </div>
+
+    <!-- Chart.js script -->
+    <script>
+        $(document).ready(function() {
+            // Initialize empty chart
+            window.backtestChart = new Chart($('#backtestChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Close Price',
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { display: true, title: { display: true, text: 'Date' } },
+                        y: { display: true, title: { display: true, text: 'Price' } }
+                    },
+                    plugins: {
+                        legend: { display: true }
+                    }
+                }
+            });
+
+            {% if chart_data %}
+                // Map backend chart_data to chart.js format
+                var labels = {{ chart_data|map(attribute='date')|list|tojson }};
+                var prices = {{ chart_data|map(attribute='close')|list|tojson }};
+                var signals = {{ chart_data|map(attribute='signal')|list|tojson }};
+
+                window.backtestChart.data.labels = labels;
+                window.backtestChart.data.datasets[0].data = prices;
+                window.backtestChart.update();
+
+                // Optional: visualize buy/sell signals
+                signals.forEach(function(s, i){
+                    if(s != 0){
+                        console.log(`Signal ${s > 0 ? 'BUY' : 'SELL'} on ${labels[i]} at price ${prices[i]}`);
+                    }
+                });
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

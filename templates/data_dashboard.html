@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>📊 Equity Data Dashboard</h1>
+
+    <form method="POST">
+        <input type="text" name="ticker" placeholder="Enter ticker (e.g., AAPL)" required>
+        <input type="date" name="start" required>
+        <input type="date" name="end" required>
+
+        <label for="table">Select Existing Table:</label>
+        <select name="table">
+            <option value="">--Select--</option>
+            {% for t in tables %}
+                <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="new_table">Or create new table:</label>
+        <input type="text" name="new_table" placeholder="Enter new table name">
+
+        <button type="submit">Fetch & Save</button>
+    </form>
+
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+
+    {% if df %}
+        <h2>Preview Data</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    {% for col in df.columns %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in df.values %}
+                    <tr>
+                        {% for cell in row %}
+                            <td>{{ cell }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html>
