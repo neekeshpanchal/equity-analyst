@@ -3,96 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <title>Backtest Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        :root {
+            --midnight-green: #073b3a;
+            --dartmouth-green: #0b6e4f;
+            --pigment-green: #08a045;
+            --taupe-gray: #84828f;
+            --eggshell: #f4f1de;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .chat-bubble { @apply p-3 rounded-xl mb-2 max-w-[90%]; }
+        .user-bubble { background-color: var(--pigment-green); color: white; }
+        .ai-bubble { background-color: var(--eggshell); color: var(--midnight-green); }
+    </style>
 </head>
-<body>
-    <h1>📊 Backtest & Predictive Modeling Dashboard</h1>
+<body class="h-screen flex bg-[var(--taupe-gray)]">
 
-    <!-- Backtest Form -->
-    <form id="backtestForm" method="POST">
-        <input type="text" name="ticker" placeholder="Enter ticker (e.g. AAPL)" required>
-        
-        <select name="table" required>
-            <option value="" disabled selected>Select a table</option>
-            {% for t in tables %}
-                <option value="{{ t }}">{{ t }}</option>
-            {% endfor %}
-        </select>
-
-        <input type="date" name="start" required>
-        <input type="date" name="end" required>
-        <input type="text" name="model" placeholder="Model Name (e.g. LSTM)" required>
-        <button type="submit">Run Backtest</button>
-    </form>
-
-    <!-- Result Metrics -->
-    {% if result %}
-        <div class="result-metrics">
-            {% if result.error %}
-                <p style="color: red;">Error: {{ result.error }}</p>
-            {% else %}
-                <p><strong>Total Return %:</strong> {{ result.total_return_pct }}</p>
-                <p><strong>Volatility %:</strong> {{ result.volatility_pct }}</p>
-                <p><strong>Sharpe Ratio:</strong> {{ result.sharpe_ratio }}</p>
-                <p><strong>Max Drawdown %:</strong> {{ result.max_drawdown_pct }}</p>
-            {% endif %}
+    <!-- Left: AI Interpretation Panel -->
+    <div id="aiPanel" class="w-1/3 p-4 border-r border-[var(--midnight-green)] h-full overflow-y-auto bg-[var(--midnight-green)] text-[var(--eggshell)]">
+        <h2 class="text-2xl font-bold mb-4">AI Interpretation</h2>
+        <div id="chatContainer" class="flex flex-col">
+            <div class="chat-bubble ai-bubble">Run a backtest to see AI insights here...</div>
         </div>
-    {% endif %}
-
-    <!-- Chart -->
-    <div class="chart-container">
-        <canvas id="backtestChart"></canvas>
     </div>
 
-    <!-- Chart.js script -->
-    <script>
-        $(document).ready(function() {
-            // Initialize empty chart
-            window.backtestChart = new Chart($('#backtestChart'), {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Close Price',
-                        data: [],
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                        fill: true,
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { display: true, title: { display: true, text: 'Date' } },
-                        y: { display: true, title: { display: true, text: 'Price' } }
-                    },
-                    plugins: {
-                        legend: { display: true }
-                    }
-                }
-            });
+    <!-- Right: Chart & Form -->
+    <div id="chartPanel" class="w-2/3 p-6 flex flex-col">
+        <h1 class="text-3xl font-bold mb-4 text-[var(--midnight-green)]">📊 Backtest & Predictive Modeling Dashboard</h1>
 
-            {% if chart_data %}
-                // Map backend chart_data to chart.js format
-                var labels = {{ chart_data|map(attribute='date')|list|tojson }};
-                var prices = {{ chart_data|map(attribute='close')|list|tojson }};
-                var signals = {{ chart_data|map(attribute='signal')|list|tojson }};
+        <form id="backtestForm" method="POST" class="flex flex-wrap gap-3 mb-6 bg-[var(--eggshell)] p-4 rounded-xl shadow-md">
+            <input type="text" name="ticker" placeholder="Ticker" class="p-2 rounded border border-[var(--taupe-gray)] flex-1" required>
+            <select name="table" class="p-2 rounded border border-[var(--taupe-gray)] flex-1" required>
+                <option value="" disabled selected>Select a table</option>
+                {% for t in tables %}
+                    <option value="{{ t }}">{{ t }}</option>
+                {% endfor %}
+            </select>
+            <input type="date" name="start" class="p-2 rounded border border-[var(--taupe-gray)]" required>
+            <input type="date" name="end" class="p-2 rounded border border-[var(--taupe-gray)]" required>
+            <input type="text" name="model" placeholder="Model Name (LSTM)" class="p-2 rounded border border-[var(--taupe-gray)] flex-1" required>
+            <button type="submit" class="bg-[var(--pigment-green)] text-white px-4 py-2 rounded hover:bg-[var(--dartmouth-green)] transition">Run Backtest</button>
+        </form>
 
-                window.backtestChart.data.labels = labels;
-                window.backtestChart.data.datasets[0].data = prices;
-                window.backtestChart.update();
+        {% if result %}
+            <div class="bg-[var(--eggshell)] p-4 rounded-xl shadow-md mb-4 text-[var(--midnight-green)]">
+                {% if result.error %}
+                    <p class="text-red-600 font-bold">Error: {{ result.error }}</p>
+                {% else %}
+                    <p><strong>Total Return %:</strong> {{ result.total_return_pct }}</p>
+                    <p><strong>Volatility %:</strong> {{ result.volatility_pct }}</p>
+                    <p><strong>Sharpe Ratio:</strong> {{ result.sharpe_ratio }}</p>
+                    <p><strong>Max Drawdown %:</strong> {{ result.max_drawdown_pct }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
 
-                // Optional: visualize buy/sell signals
-                signals.forEach(function(s, i){
-                    if(s != 0){
-                        console.log(`Signal ${s > 0 ? 'BUY' : 'SELL'} on ${labels[i]} at price ${prices[i]}`);
-                    }
+        <canvas id="backtestChart" class="bg-[var(--eggshell)] p-4 rounded-xl shadow-md h-96"></canvas>
+    </div>
+
+<script>
+$(document).ready(function() {
+    const ctx = $('#backtestChart');
+    window.backtestChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Close Price', data: [], borderColor: '#08a045', fill: true, backgroundColor: 'rgba(8,160,69,0.2)', tension: 0.1 }] },
+        options: { responsive: true, plugins: { legend: { labels: { color: '#073b3a' } } }, scales: { x: { ticks: { color: '#073b3a' } }, y: { ticks: { color: '#073b3a' } } } }
+    });
+
+    {% if chart_data %}
+        const labels = {{ chart_data|map(attribute='date')|list|tojson }};
+        const prices = {{ chart_data|map(attribute='close')|list|tojson }};
+        const signals = {{ chart_data|map(attribute='signal')|list|tojson }};
+
+        window.backtestChart.data.labels = labels;
+        window.backtestChart.data.datasets[0].data = prices;
+        window.backtestChart.update();
+
+        // Fetch AI insights asynchronously
+        $.ajax({
+            type: "POST",
+            url: "/api/interpret_metrics",
+            contentType: "application/json",
+            data: JSON.stringify({ 
+                total_return: {{ result.total_return_pct }},
+                volatility: {{ result.volatility_pct }},
+                sharpe: {{ result.sharpe_ratio }},
+                max_drawdown: {{ result.max_drawdown_pct }}
+            }),
+            success: function(resp){
+                $('#chatContainer').html('');
+                resp.messages.forEach(msg => {
+                    $('#chatContainer').append(`<div class="chat-bubble ai-bubble">${msg}</div>`);
                 });
-            {% endif %}
+            },
+            error: function(err){
+                $('#chatContainer').append('<div class="chat-bubble ai-bubble text-red-500">Failed to get AI interpretation</div>');
+            }
         });
-    </script>
+    {% endif %}
+});
+</script>
 </body>
 </html>

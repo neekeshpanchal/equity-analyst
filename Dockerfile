@@ -16,7 +16,7 @@ COPY . .
 # 6. Expose port
 EXPOSE 5000
 
-RUN mkdir -p /tmp/yf_cache_disabled && chmod -R 777 /tmp/yf_cache_disabled
+RUN mkdir -p /tmp/yf_cache_disabled && chmod -R 777 /tmp/yf_cache_disabled /app/data
 
 # 7. Use Gunicorn to serve Flask for production
 #    - Bind to 0.0.0.0 so external connections can reach the container

@@ -1,0 +1,31 @@
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Logs
+*.log
+
+# Environment files
+.env
+.venv/
+venv/
+env/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/
+
+# Docker artifacts
+*.pid
+*.sock
+
+# Compiled models or temp data
+*.h5
+*.pkl
+*.model

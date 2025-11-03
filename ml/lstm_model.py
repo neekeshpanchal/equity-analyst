@@ -56,17 +56,33 @@ def train_lstm(df: pd.DataFrame, feature_col='close', window_size=20, epochs=50,
     model.fit(X, y, epochs=epochs, batch_size=batch_size, verbose=0, callbacks=[early_stop])
     return model, scaler
 
-def predict_lstm(model, scaler, df: pd.DataFrame, feature_col='close', window_size=20):
+def predict_lstm(model, scaler, df, feature_col='close', look_back=20):
     """
-    Generate a prediction for the next step using the trained model.
+    Predict next price using trained LSTM.
     """
-    values = df[[feature_col]].values.astype('float32')
-    scaled = scaler.transform(values)
-    X_input = scaled[-window_size:]
-    X_input = X_input.reshape(1, window_size, 1)
-    pred_scaled = model.predict(X_input)
-    pred = scaler.inverse_transform(pred_scaled)
-    return float(pred[0, 0])
+    data = df[[feature_col]].values
+    if len(data) < look_back:
+        raise ValueError(f"Not enough data to predict: required {look_back}, got {len(data)}")
+
+    # Scale
+    scaled_data = scaler.transform(data)
+
+    # Prepare sequence
+    X_test = []
+    for i in range(look_back, len(scaled_data)):
+        X_test.append(scaled_data[i-look_back:i, 0])
+    X_test = np.array(X_test)
+
+    # Reshape for LSTM input: (samples, timesteps, features)
+    X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
+
+    # Predict
+    predicted_scaled = model.predict(X_test, verbose=0)
+
+    # Reverse scaling
+    predicted = scaler.inverse_transform(predicted_scaled)
+    return predicted.flatten()
+
 
 def save_model(model, model_name: str):
     """
